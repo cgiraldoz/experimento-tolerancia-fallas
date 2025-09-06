@@ -195,9 +195,19 @@
         <div class="row">
             <div class="col-12">
                 <div class="chart-container">
-                    <h4><i class="fas fa-table"></i> Métricas Detalladas</h4>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4><i class="fas fa-table"></i> Métricas Detalladas</h4>
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadDetailedMetrics()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
                     <div id="detailedMetrics">
-                        <!-- Las métricas detalladas se cargarán aquí -->
+                        <div class="loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando métricas...</span>
+                            </div>
+                            <p class="mt-2">Cargando métricas detalladas...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -487,6 +497,8 @@
                 const detailedMetrics = document.getElementById('detailedMetrics');
                 let html = '';
                 
+                console.log('Detailed metrics data:', data); // Debug log
+                
                 if (data.length === 0) {
                     html = '<p class="text-muted">No hay métricas disponibles</p>';
                 } else {
@@ -497,6 +509,8 @@
                                     <tr>
                                         <th>Servicio</th>
                                         <th>Endpoint</th>
+                                        <th>Método</th>
+                                        <th>Status</th>
                                         <th>Requests</th>
                                         <th>Avg Latency</th>
                                         <th>P95 Latency</th>
@@ -508,15 +522,18 @@
                     `;
                     
                     data.forEach(metric => {
+                        const statusClass = metric.status_code === 200 ? 'text-success' : 'text-danger';
                         html += `
                             <tr>
-                                <td>${metric.service_name}</td>
-                                <td>${metric.method} ${metric.endpoint}</td>
-                                <td>${metric.request_count}</td>
-                                <td>${metric.avg_latency ? metric.avg_latency.toFixed(1) : 'N/A'}ms</td>
-                                <td>${metric.p95_latency ? metric.p95_latency.toFixed(1) : 'N/A'}ms</td>
-                                <td>${metric.p99_latency ? metric.p99_latency.toFixed(1) : 'N/A'}ms</td>
-                                <td>${metric.max_latency ? metric.max_latency.toFixed(1) : 'N/A'}ms</td>
+                                <td><span class="badge bg-primary">${metric.service_name}</span></td>
+                                <td>${metric.endpoint}</td>
+                                <td><span class="badge bg-secondary">${metric.method}</span></td>
+                                <td><span class="${statusClass}">${metric.status_code}</span></td>
+                                <td><strong>${metric.request_count}</strong></td>
+                                <td>${metric.avg_latency ? parseFloat(metric.avg_latency).toFixed(1) : 'N/A'}ms</td>
+                                <td>${metric.p95_latency ? parseFloat(metric.p95_latency).toFixed(1) : 'N/A'}ms</td>
+                                <td>${metric.p99_latency ? parseFloat(metric.p99_latency).toFixed(1) : 'N/A'}ms</td>
+                                <td>${metric.max_latency ? parseFloat(metric.max_latency).toFixed(1) : 'N/A'}ms</td>
                             </tr>
                         `;
                     });
@@ -531,6 +548,11 @@
                 detailedMetrics.innerHTML = html;
             } catch (error) {
                 console.error('Error loading detailed metrics:', error);
+                document.getElementById('detailedMetrics').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Error cargando métricas detalladas: ${error.message}
+                    </div>
+                `;
             }
         }
     </script>
