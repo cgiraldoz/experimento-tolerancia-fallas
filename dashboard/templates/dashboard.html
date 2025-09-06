@@ -72,12 +72,33 @@
             bottom: 20px;
             right: 20px;
             z-index: 1000;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
         }
         .auto-refresh {
             position: fixed;
-            top: 20px;
+            top: 80px;
             right: 20px;
             z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        .auto-refresh.active {
+            background: rgba(0, 123, 255, 0.8);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        .auto-refresh .form-check-input:checked {
+            background-color: #28a745;
+            border-color: #28a745;
         }
     </style>
 </head>
@@ -96,8 +117,8 @@
             <div class="auto-refresh">
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
-                    <label class="form-check-label text-white" for="autoRefresh">
-                        Auto-refresh
+                    <label class="form-check-label text-white fw-bold" for="autoRefresh">
+                        <i class="fas fa-sync-alt"></i> Auto-refresh
                     </label>
                 </div>
             </div>
@@ -202,15 +223,20 @@
         // Configurar auto-refresh
         function setupAutoRefresh() {
             const autoRefreshCheckbox = document.getElementById('autoRefresh');
+            const autoRefreshContainer = document.querySelector('.auto-refresh');
+            
             autoRefreshCheckbox.addEventListener('change', function() {
                 isAutoRefresh = this.checked;
                 if (isAutoRefresh) {
                     startAutoRefresh();
+                    autoRefreshContainer.classList.add('active');
                 } else {
                     stopAutoRefresh();
+                    autoRefreshContainer.classList.remove('active');
                 }
             });
             startAutoRefresh();
+            autoRefreshContainer.classList.add('active');
         }
 
         function startAutoRefresh() {
