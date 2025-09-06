@@ -269,11 +269,60 @@ class ExperimentRunner:
         
         self.end_time = time.time()
         
+        # Limpiar todos los fallos y reiniciar servicios
+        self.cleanup_after_experiment()
+        
         # Generar reporte
         self.generate_report()
         
         logger.info("Experiment completed!")
         return True
+    
+    def cleanup_after_experiment(self):
+        """Limpia todos los fallos y reinicia servicios detenidos"""
+        logger.info("Cleaning up after experiment...")
+        
+        # Lista de instancias que pueden haber tenido fallos
+        instances = ['1', '2', '3']
+        
+        for instance_id in instances:
+            try:
+                # Intentar limpiar fallos (solo funciona si el servicio está corriendo)
+                cmd = ['python', 'scripts/inject_failures.py', 'clear', '--instance', instance_id]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+                
+                if result.returncode == 0:
+                    logger.info(f"Cleared failures in inventory-svc-{instance_id}")
+                else:
+                    logger.warning(f"Could not clear failures in inventory-svc-{instance_id}: {result.stderr}")
+                    
+            except subprocess.TimeoutExpired:
+                logger.warning(f"Timeout clearing failures in inventory-svc-{instance_id}")
+            except Exception as e:
+                logger.warning(f"Error clearing failures in inventory-svc-{instance_id}: {e}")
+        
+        # Reiniciar servicios que puedan estar detenidos
+        logger.info("Restarting any stopped services...")
+        try:
+            # Usar docker-compose para reiniciar todos los servicios
+            result = subprocess.run(['docker-compose', 'restart'], 
+                                  capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                logger.info("All services restarted successfully")
+            else:
+                logger.warning(f"Error restarting services: {result.stderr}")
+        except Exception as e:
+            logger.warning(f"Error restarting services: {e}")
+        
+        # Esperar a que los servicios estén listos
+        logger.info("Waiting for services to be ready...")
+        time.sleep(10)
+        
+        # Verificar que todos los servicios estén funcionando
+        if self.wait_for_services(timeout=30):
+            logger.info("All services are ready after cleanup")
+        else:
+            logger.warning("Some services may not be ready after cleanup")
     
     def generate_report(self):
         """Genera reporte del experimento"""

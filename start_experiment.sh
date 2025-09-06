@@ -21,6 +21,7 @@ show_help() {
     echo "  test      Ejecutar pruebas básicas"
     echo "  experiment Ejecutar experimento completo"
     echo "  clean     Limpiar contenedores y volúmenes"
+    echo "  cleanup   Limpiar fallos y reiniciar servicios"
     echo "  logs      Mostrar logs de todos los servicios"
     echo "  status    Mostrar estado de los servicios"
     echo "  help      Mostrar esta ayuda"
@@ -234,6 +235,10 @@ main() {
             ;;
         clean)
             clean_up
+            ;;
+        cleanup)
+            echo "🧹 Limpiando fallos y reiniciando servicios..."
+            python scripts/cleanup_experiment.py
             ;;
         logs)
             show_logs
