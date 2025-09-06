@@ -25,7 +25,7 @@ class ExperimentRunner:
         logger.info("Waiting for services to be ready...")
         
         services = [
-            'http://localhost:5000/health',  # orders-svc
+            'http://localhost:5006/health',  # orders-svc
             'http://localhost:5001/health',  # inventory-svc-1
             'http://localhost:5002/health',  # inventory-svc-2
             'http://localhost:5003/health',  # inventory-svc-3
