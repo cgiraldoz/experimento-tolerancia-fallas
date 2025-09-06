@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes de Experimentos - Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .report-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #007bff;
+            transition: transform 0.2s;
+        }
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .score-badge {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 15px;
+            border-radius: 20px;
+        }
+        .score-excellent { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .score-good { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .score-fair { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .score-poor { background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%); color: white; }
+        
+        .metric-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 3px solid #007bff;
+        }
+        .metric-item.success { border-left-color: #28a745; }
+        .metric-item.warning { border-left-color: #ffc107; }
+        .metric-item.danger { border-left-color: #dc3545; }
+        
+        .finding-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 3px solid #17a2b8;
+        }
+        .recommendation-item {
+            background: #fff3cd;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 3px solid #ffc107;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <i class="fas fa-file-alt"></i> Reportes de Experimentos
+            </span>
+        </div>
+    </nav>
+
+    <!-- Botón de regreso -->
+    <a href="/" class="btn btn-primary back-btn">
+        <i class="fas fa-arrow-left"></i> Volver al Dashboard
+    </a>
+
+    <div class="container-fluid mt-4">
+        <!-- Lista de Reportes -->
+        <div class="row">
+            <div class="col-12">
+                <h2><i class="fas fa-history"></i> Historial de Experimentos</h2>
+                <div id="reportsList">
+                    <div class="loading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Cargando reportes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detalles del Reporte Seleccionado -->
+        <div class="row" id="reportDetails" style="display: none;">
+            <div class="col-12">
+                <h3><i class="fas fa-chart-line"></i> Análisis del Experimento</h3>
+                
+                <!-- Resumen General -->
+                <div class="report-card">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4 id="reportTitle">Reporte de Experimento</h4>
+                            <p id="reportDate" class="text-muted"></p>
+                            <p id="reportDuration" class="text-muted"></p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div id="overallScore" class="score-badge">Score: 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evaluación General -->
+                <div class="report-card">
+                    <h5><i class="fas fa-clipboard-check"></i> Evaluación General</h5>
+                    <div class="alert alert-info" id="overallAssessment">
+                        <!-- La evaluación se cargará aquí -->
+                    </div>
+                </div>
+
+                <!-- Métricas Clave -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="report-card">
+                            <h5><i class="fas fa-tachometer-alt"></i> Métricas de Rendimiento</h5>
+                            <div id="performanceMetrics">
+                                <!-- Las métricas se cargarán aquí -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="report-card">
+                            <h5><i class="fas fa-exclamation-triangle"></i> Análisis de Fallas</h5>
+                            <div id="failureAnalysis">
+                                <!-- El análisis de fallas se cargará aquí -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de TTD/TTR -->
+                <div class="chart-container">
+                    <h5><i class="fas fa-chart-bar"></i> TTD y TTR por Tipo de Falla</h5>
+                    <div id="ttdTtrChart"></div>
+                </div>
+
+                <!-- Hallazgos Clave -->
+                <div class="report-card">
+                    <h5><i class="fas fa-search"></i> Hallazgos Clave</h5>
+                    <div id="keyFindings">
+                        <!-- Los hallazgos se cargarán aquí -->
+                    </div>
+                </div>
+
+                <!-- Recomendaciones -->
+                <div class="report-card">
+                    <h5><i class="fas fa-lightbulb"></i> Recomendaciones</h5>
+                    <div id="recommendations">
+                        <!-- Las recomendaciones se cargarán aquí -->
+                    </div>
+                </div>
+
+                <!-- Detalles Técnicos -->
+                <div class="report-card">
+                    <h5><i class="fas fa-cogs"></i> Detalles Técnicos</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="technicalDetails">
+                            <thead>
+                                <tr>
+                                    <th>Tipo de Falla</th>
+                                    <th>Instancia</th>
+                                    <th>TTD (ms)</th>
+                                    <th>TTR (ms)</th>
+                                    <th>P95 Latency</th>
+                                    <th>Success Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Los detalles técnicos se cargarán aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentReport = null;
+
+        // Cargar lista de reportes al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadReportsList();
+        });
+
+        // Cargar lista de reportes
+        async function loadReportsList() {
+            try {
+                const response = await fetch('/api/reports');
+                const reports = await response.json();
+                
+                const reportsList = document.getElementById('reportsList');
+                
+                if (reports.length === 0) {
+                    reportsList.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No hay reportes de experimentos disponibles.
+                            <br><small>Ejecuta un experimento para generar reportes.</small>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div class="row">';
+                
+                reports.forEach(report => {
+                    const startDate = new Date(report.start_time).toLocaleString();
+                    const duration = Math.round(report.duration_seconds / 60);
+                    const score = calculateScore(report);
+                    const scoreClass = getScoreClass(score);
+                    
+                    html += `
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="report-card" onclick="loadReportDetails('${report.filename}')" style="cursor: pointer;">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0">Experimento</h6>
+                                    <span class="score-badge ${scoreClass}">${score}/100</span>
+                                </div>
+                                <p class="text-muted small mb-2">
+                                    <i class="fas fa-calendar"></i> ${startDate}
+                                </p>
+                                <p class="text-muted small mb-2">
+                                    <i class="fas fa-clock"></i> ${duration} minutos
+                                </p>
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <small class="text-muted">Tests</small>
+                                        <div class="fw-bold">${report.successful_tests}/${report.total_tests}</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted">TTD</small>
+                                        <div class="fw-bold">${Math.round(report.avg_ttd_ms)}ms</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted">P95</small>
+                                        <div class="fw-bold">${report.max_p95_ms}ms</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                reportsList.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                document.getElementById('reportsList').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Error cargando reportes: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Cargar detalles de un reporte específico
+        async function loadReportDetails(filename) {
+            try {
+                const response = await fetch(`/api/reports/${filename}`);
+                const report = await response.json();
+                
+                currentReport = report;
+                displayReportDetails(report);
+                loadReportChart(filename);
+                
+                // Mostrar la sección de detalles
+                document.getElementById('reportDetails').style.display = 'block';
+                
+                // Scroll a los detalles
+                document.getElementById('reportDetails').scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('Error loading report details:', error);
+                alert('Error cargando detalles del reporte: ' + error.message);
+            }
+        }
+
+        // Mostrar detalles del reporte
+        function displayReportDetails(report) {
+            const experimentInfo = report.experiment_info;
+            const summary = report.summary;
+            const analysis = report.analysis;
+            
+            // Título y fecha
+            document.getElementById('reportTitle').textContent = `Experimento - ${new Date(experimentInfo.start_time).toLocaleString()}`;
+            document.getElementById('reportDate').textContent = `Inicio: ${new Date(experimentInfo.start_time).toLocaleString()}`;
+            document.getElementById('reportDuration').textContent = `Duración: ${Math.round(experimentInfo.total_duration_seconds / 60)} minutos`;
+            
+            // Score general
+            const score = analysis.performance_analysis.overall_score;
+            const scoreClass = getScoreClass(score);
+            document.getElementById('overallScore').innerHTML = `Score: ${score}/100`;
+            document.getElementById('overallScore').className = `score-badge ${scoreClass}`;
+            
+            // Evaluación general
+            document.getElementById('overallAssessment').innerHTML = analysis.overall_assessment;
+            
+            // Métricas de rendimiento
+            const perfAnalysis = analysis.performance_analysis;
+            document.getElementById('performanceMetrics').innerHTML = `
+                <div class="metric-item ${perfAnalysis.latency_compliance ? 'success' : 'warning'}">
+                    <i class="fas fa-clock"></i> Latencia P95: ${perfAnalysis.latency_compliance ? '✅ Cumple' : '⚠️ No cumple'} (< 1000ms)
+                </div>
+                <div class="metric-item ${perfAnalysis.availability_compliance ? 'success' : 'warning'}">
+                    <i class="fas fa-server"></i> Disponibilidad: ${perfAnalysis.availability_compliance ? '✅ Cumple' : '⚠️ No cumple'} (≥ 95%)
+                </div>
+                <div class="metric-item ${perfAnalysis.detection_speed ? 'success' : 'warning'}">
+                    <i class="fas fa-search"></i> Velocidad Detección: ${perfAnalysis.detection_speed ? '✅ Rápida' : '⚠️ Lenta'} (< 5000ms)
+                </div>
+            `;
+            
+            // Análisis de fallas
+            const failureAnalysis = analysis.failure_analysis;
+            document.getElementById('failureAnalysis').innerHTML = `
+                <div class="metric-item ${failureAnalysis.crash_handling ? 'success' : ''}">
+                    <i class="fas fa-bomb"></i> Crash Handling: ${failureAnalysis.crash_handling ? '✅ Probado' : '❌ No probado'}
+                </div>
+                <div class="metric-item ${failureAnalysis.latency_handling ? 'success' : ''}">
+                    <i class="fas fa-tachometer-alt"></i> Latency Handling: ${failureAnalysis.latency_handling ? '✅ Probado' : '❌ No probado'}
+                </div>
+                <div class="metric-item ${failureAnalysis.intermittent_handling ? 'success' : ''}">
+                    <i class="fas fa-random"></i> Intermittent Handling: ${failureAnalysis.intermittent_handling ? '✅ Probado' : '❌ No probado'}
+                </div>
+                <div class="metric-item">
+                    <i class="fas fa-list"></i> Tipos de Falla Probados: ${failureAnalysis.total_failure_types_tested}
+                </div>
+            `;
+            
+            // Hallazgos clave
+            let findingsHtml = '';
+            analysis.key_findings.forEach(finding => {
+                findingsHtml += `<div class="finding-item">${finding}</div>`;
+            });
+            document.getElementById('keyFindings').innerHTML = findingsHtml;
+            
+            // Recomendaciones
+            let recommendationsHtml = '';
+            analysis.recommendations.forEach(rec => {
+                recommendationsHtml += `<div class="recommendation-item"><i class="fas fa-lightbulb"></i> ${rec}</div>`;
+            });
+            document.getElementById('recommendations').innerHTML = recommendationsHtml;
+            
+            // Detalles técnicos
+            let technicalHtml = '';
+            report.results.forEach(result => {
+                technicalHtml += `
+                    <tr>
+                        <td>${result.failure_type}</td>
+                        <td>${result.instance_id}</td>
+                        <td>${result.ttd_ms ? Math.round(result.ttd_ms) : 'N/A'}</td>
+                        <td>${result.ttr_ms ? Math.round(result.ttr_ms) : 'N/A'}</td>
+                        <td>${result.load_test_result ? result.load_test_result.p95_ms : 'N/A'}ms</td>
+                        <td>${result.load_test_result ? result.load_test_result.success_rate : 'N/A'}%</td>
+                    </tr>
+                `;
+            });
+            document.querySelector('#technicalDetails tbody').innerHTML = technicalHtml;
+        }
+
+        // Cargar gráfico del reporte
+        async function loadReportChart(filename) {
+            try {
+                const response = await fetch(`/api/reports/${filename}/chart`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('ttdTtrChart').innerHTML = '<p class="text-muted">No hay datos para el gráfico</p>';
+                    return;
+                }
+                
+                const chartData = JSON.parse(data);
+                Plotly.newPlot('ttdTtrChart', chartData.data, chartData.layout, {responsive: true});
+                
+            } catch (error) {
+                console.error('Error loading report chart:', error);
+                document.getElementById('ttdTtrChart').innerHTML = '<p class="text-danger">Error cargando gráfico</p>';
+            }
+        }
+
+        // Calcular score basado en métricas
+        function calculateScore(report) {
+            let score = 0;
+            
+            // Disponibilidad (40 puntos)
+            const successRate = report.successful_tests / Math.max(report.total_tests, 1);
+            score += successRate * 40;
+            
+            // Latencia (30 puntos)
+            if (report.max_p95_ms < 1000) {
+                score += 30;
+            } else if (report.max_p95_ms < 2000) {
+                score += 20;
+            } else {
+                score += 10;
+            }
+            
+            // TTD (20 puntos)
+            if (report.avg_ttd_ms < 1000) {
+                score += 20;
+            } else if (report.avg_ttd_ms < 5000) {
+                score += 15;
+            } else if (report.avg_ttd_ms < 10000) {
+                score += 10;
+            } else {
+                score += 5;
+            }
+            
+            // TTR (10 puntos)
+            if (report.avg_ttr_ms && report.avg_ttr_ms < 30000) {
+                score += 10;
+            } else if (report.avg_ttr_ms && report.avg_ttr_ms < 60000) {
+                score += 7;
+            } else {
+                score += 5;
+            }
+            
+            return Math.min(100, Math.max(0, Math.round(score)));
+        }
+
+        // Obtener clase CSS para el score
+        function getScoreClass(score) {
+            if (score >= 90) return 'score-excellent';
+            if (score >= 75) return 'score-good';
+            if (score >= 60) return 'score-fair';
+            return 'score-poor';
+        }
+    </script>
+</body>
+</html>

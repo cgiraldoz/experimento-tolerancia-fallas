@@ -165,6 +165,19 @@ El dashboard proporciona visualización en tiempo real de:
 - **Fallas Detectadas**: Historial y gráficos de fallas por hora
 - **Métricas Detalladas**: Tabla con métricas completas por endpoint
 
+### Vista de Reportes de Experimentos
+
+**Acceso a Reportes**: http://localhost:5007/reports
+
+La vista de reportes proporciona:
+- **Historial de Experimentos**: Lista de todos los experimentos ejecutados con scores
+- **Análisis Automático**: Evaluación automática de cada experimento con explicaciones
+- **Métricas Clave**: TTD, TTR, latencias P95/P99, disponibilidad
+- **Hallazgos Clave**: Identificación automática de problemas y éxitos
+- **Recomendaciones**: Sugerencias específicas para mejorar el sistema
+- **Gráficos de TTD/TTR**: Visualización de tiempos de detección y recuperación
+- **Score General**: Puntuación de 0-100 basada en métricas clave
+
 ### Endpoints de Monitoreo
 
 - `GET /monitor/status` - Estado de todas las instancias

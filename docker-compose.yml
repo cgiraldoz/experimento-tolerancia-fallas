@@ -132,6 +132,8 @@ services:
     environment:
       - POSTGRES_URL=postgresql://postgres:postgres@postgres:5432/experimento
       - SERVICE_NAME=dashboard
+    volumes:
+      - .:/app/host:ro
     depends_on:
       - postgres
 

@@ -2,6 +2,7 @@ import os
 import json
 import time
 import logging
+import glob
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request
 import psycopg2
@@ -444,6 +445,291 @@ def api_charts_failures():
         
     except Exception as e:
         logger.error(f"Error creating failures chart: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def get_experiment_reports():
+    """Obtiene la lista de reportes de experimentos"""
+    try:
+        # Buscar archivos de reporte en el directorio host
+        report_files = glob.glob('/app/host/experiment_report_*.json')
+        reports = []
+        
+        for file_path in sorted(report_files, reverse=True):  # Más recientes primero
+            try:
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+                
+                # Extraer información básica del reporte
+                report_info = {
+                    'filename': os.path.basename(file_path),
+                    'start_time': data.get('experiment_info', {}).get('start_time'),
+                    'end_time': data.get('experiment_info', {}).get('end_time'),
+                    'duration_seconds': data.get('experiment_info', {}).get('total_duration_seconds'),
+                    'total_tests': data.get('summary', {}).get('total_tests', 0),
+                    'successful_tests': data.get('summary', {}).get('successful_tests', 0),
+                    'avg_ttd_ms': data.get('summary', {}).get('avg_ttd_ms', 0),
+                    'avg_ttr_ms': data.get('summary', {}).get('avg_ttr_ms', 0),
+                    'max_p95_ms': data.get('summary', {}).get('max_p95_ms', 0),
+                    'min_success_rate': data.get('summary', {}).get('min_success_rate', 0)
+                }
+                
+                reports.append(report_info)
+                
+            except Exception as e:
+                logger.error(f"Error reading report {file_path}: {e}")
+                continue
+        
+        return reports
+        
+    except Exception as e:
+        logger.error(f"Error getting experiment reports: {e}")
+        return []
+
+def get_experiment_report_details(filename):
+    """Obtiene los detalles completos de un reporte específico"""
+    try:
+        file_path = f'/app/host/{filename}'
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        
+        # Agregar análisis y explicaciones
+        analysis = analyze_experiment_report(data)
+        data['analysis'] = analysis
+        
+        return data
+        
+    except Exception as e:
+        logger.error(f"Error reading report details {filename}: {e}")
+        return None
+
+def analyze_experiment_report(report_data):
+    """Analiza un reporte de experimento y genera explicaciones"""
+    analysis = {
+        'overall_assessment': '',
+        'key_findings': [],
+        'recommendations': [],
+        'performance_analysis': {},
+        'failure_analysis': {}
+    }
+    
+    try:
+        summary = report_data.get('summary', {})
+        results = report_data.get('results', [])
+        
+        # Análisis general
+        success_rate = summary.get('successful_tests', 0) / max(summary.get('total_tests', 1), 1) * 100
+        avg_ttd = summary.get('avg_ttd_ms', 0)
+        max_p95 = summary.get('max_p95_ms', 0)
+        
+        if success_rate >= 90 and max_p95 < 1000:
+            analysis['overall_assessment'] = 'EXCELENTE - El sistema demostró alta tolerancia a fallas'
+        elif success_rate >= 75 and max_p95 < 2000:
+            analysis['overall_assessment'] = 'BUENO - El sistema manejó las fallas adecuadamente'
+        else:
+            analysis['overall_assessment'] = 'NECESITA MEJORAS - Se detectaron problemas de tolerancia a fallas'
+        
+        # Hallazgos clave
+        if max_p95 < 1000:
+            analysis['key_findings'].append(f"✅ Latencia P95 excelente: {max_p95}ms (objetivo <1000ms)")
+        else:
+            analysis['key_findings'].append(f"⚠️ Latencia P95 alta: {max_p95}ms (objetivo <1000ms)")
+        
+        if success_rate >= 95:
+            analysis['key_findings'].append(f"✅ Alta disponibilidad: {success_rate:.1f}% de tests exitosos")
+        else:
+            analysis['key_findings'].append(f"⚠️ Disponibilidad reducida: {success_rate:.1f}% de tests exitosos")
+        
+        if avg_ttd < 5000:
+            analysis['key_findings'].append(f"✅ TTD rápido: {avg_ttd:.0f}ms promedio")
+        else:
+            analysis['key_findings'].append(f"⚠️ TTD lento: {avg_ttd:.0f}ms promedio (objetivo <1000ms)")
+        
+        # Análisis por tipo de falla
+        for result in results:
+            failure_type = result.get('failure_type', 'unknown')
+            ttd = result.get('ttd_ms')
+            ttr = result.get('ttr_ms')
+            p95 = result.get('load_test_result', {}).get('p95_ms', 0)
+            
+            if failure_type == 'crash':
+                if ttd and ttd < 10000:
+                    analysis['key_findings'].append(f"✅ Crash detectado rápidamente: {ttd:.0f}ms")
+                else:
+                    analysis['key_findings'].append(f"⚠️ Detección de crash lenta: {ttd:.0f}ms")
+            
+            elif failure_type == 'latency':
+                if ttd and ttd < 5000:
+                    analysis['key_findings'].append(f"✅ Latencia alta detectada: {ttd:.0f}ms")
+                else:
+                    analysis['key_findings'].append(f"⚠️ Detección de latencia lenta: {ttd:.0f}ms")
+                
+                if ttr and ttr < 30000:
+                    analysis['key_findings'].append(f"✅ Recuperación rápida: {ttr:.0f}ms")
+                else:
+                    analysis['key_findings'].append(f"⚠️ Recuperación lenta: {ttr:.0f}ms")
+            
+            elif failure_type == 'intermittent':
+                if not ttd:
+                    analysis['key_findings'].append("ℹ️ Errores intermitentes: Detección por timeout (comportamiento esperado)")
+                else:
+                    analysis['key_findings'].append(f"✅ Errores intermitentes detectados: {ttd:.0f}ms")
+        
+        # Recomendaciones
+        if avg_ttd > 5000:
+            analysis['recommendations'].append("Reducir intervalo de health checks de 200ms a 100ms")
+            analysis['recommendations'].append("Disminuir threshold de fallos consecutivos de 3 a 2")
+        
+        if max_p95 > 1000:
+            analysis['recommendations'].append("Optimizar timeouts de votación")
+            analysis['recommendations'].append("Revisar configuración de Kafka")
+        
+        if success_rate < 95:
+            analysis['recommendations'].append("Investigar causas de fallos en tests")
+            analysis['recommendations'].append("Mejorar manejo de errores en servicios")
+        
+        # Análisis de rendimiento
+        analysis['performance_analysis'] = {
+            'latency_compliance': max_p95 < 1000,
+            'availability_compliance': success_rate >= 95,
+            'detection_speed': avg_ttd < 5000,
+            'overall_score': calculate_overall_score(summary)
+        }
+        
+        # Análisis de fallas
+        failure_types = [r.get('failure_type') for r in results]
+        analysis['failure_analysis'] = {
+            'crash_handling': 'crash' in failure_types,
+            'latency_handling': 'latency' in failure_types,
+            'intermittent_handling': 'intermittent' in failure_types,
+            'total_failure_types_tested': len(set(failure_types))
+        }
+        
+    except Exception as e:
+        logger.error(f"Error analyzing experiment report: {e}")
+        analysis['overall_assessment'] = 'ERROR - No se pudo analizar el reporte'
+    
+    return analysis
+
+def calculate_overall_score(summary):
+    """Calcula un score general del experimento (0-100)"""
+    try:
+        score = 0
+        
+        # Disponibilidad (40 puntos)
+        success_rate = summary.get('successful_tests', 0) / max(summary.get('total_tests', 1), 1)
+        score += success_rate * 40
+        
+        # Latencia (30 puntos)
+        max_p95 = summary.get('max_p95_ms', 0)
+        if max_p95 < 1000:
+            score += 30
+        elif max_p95 < 2000:
+            score += 20
+        else:
+            score += 10
+        
+        # TTD (20 puntos)
+        avg_ttd = summary.get('avg_ttd_ms', 0)
+        if avg_ttd < 1000:
+            score += 20
+        elif avg_ttd < 5000:
+            score += 15
+        elif avg_ttd < 10000:
+            score += 10
+        else:
+            score += 5
+        
+        # TTR (10 puntos)
+        avg_ttr = summary.get('avg_ttr_ms', 0)
+        if avg_ttr and avg_ttr < 30000:
+            score += 10
+        elif avg_ttr and avg_ttr < 60000:
+            score += 7
+        else:
+            score += 5
+        
+        return min(100, max(0, score))
+        
+    except Exception as e:
+        logger.error(f"Error calculating overall score: {e}")
+        return 0
+
+@app.route('/reports')
+def reports_page():
+    """Página de reportes de experimentos"""
+    return render_template('reports.html')
+
+@app.route('/api/reports')
+def api_reports():
+    """API para obtener lista de reportes"""
+    return jsonify(get_experiment_reports())
+
+@app.route('/api/reports/<filename>')
+def api_report_details(filename):
+    """API para obtener detalles de un reporte específico"""
+    if not filename.startswith('experiment_report_') or not filename.endswith('.json'):
+        return jsonify({'error': 'Invalid filename'}), 400
+    
+    report_data = get_experiment_report_details(filename)
+    if report_data is None:
+        return jsonify({'error': 'Report not found'}), 404
+    
+    return jsonify(report_data)
+
+@app.route('/api/reports/<filename>/chart')
+def api_report_chart(filename):
+    """API para generar gráfico de un reporte específico"""
+    try:
+        report_data = get_experiment_report_details(filename)
+        if not report_data:
+            return jsonify({'error': 'Report not found'}), 404
+        
+        results = report_data.get('results', [])
+        if not results:
+            return jsonify({'error': 'No data available'}), 400
+        
+        # Crear gráfico de TTD/TTR por tipo de falla
+        fig = go.Figure()
+        
+        failure_types = []
+        ttd_values = []
+        ttr_values = []
+        
+        for result in results:
+            failure_type = result.get('failure_type', 'unknown')
+            ttd = result.get('ttd_ms', 0)
+            ttr = result.get('ttr_ms', 0)
+            
+            failure_types.append(failure_type)
+            ttd_values.append(ttd if ttd else 0)
+            ttr_values.append(ttr if ttr else 0)
+        
+        # Gráfico de barras
+        fig.add_trace(go.Bar(
+            name='TTD (ms)',
+            x=failure_types,
+            y=ttd_values,
+            marker_color='lightblue'
+        ))
+        
+        fig.add_trace(go.Bar(
+            name='TTR (ms)',
+            x=failure_types,
+            y=ttr_values,
+            marker_color='lightcoral'
+        ))
+        
+        fig.update_layout(
+            title='TTD y TTR por Tipo de Falla',
+            xaxis_title='Tipo de Falla',
+            yaxis_title='Tiempo (ms)',
+            barmode='group'
+        )
+        
+        return jsonify(plotly.utils.PlotlyJSONEncoder().encode(fig))
+        
+    except Exception as e:
+        logger.error(f"Error creating report chart: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
