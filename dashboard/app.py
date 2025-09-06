@@ -24,12 +24,12 @@ SERVICE_NAME = os.getenv('SERVICE_NAME', 'dashboard')
 
 # URLs de los servicios
 SERVICES_URLS = {
-    'orders-svc': 'http://localhost:5006',
-    'inventory-svc-1': 'http://localhost:5001',
-    'inventory-svc-2': 'http://localhost:5002',
-    'inventory-svc-3': 'http://localhost:5003',
-    'monitor-svc': 'http://localhost:5004',
-    'voter-svc': 'http://localhost:5005'
+    'orders-svc': 'http://orders-svc:5000',
+    'inventory-svc-1': 'http://inventory-svc-1:5000',
+    'inventory-svc-2': 'http://inventory-svc-2:5000',
+    'inventory-svc-3': 'http://inventory-svc-3:5000',
+    'monitor-svc': 'http://monitor-svc:5000',
+    'voter-svc': 'http://voter-svc:5000'
 }
 
 def get_db_connection():
