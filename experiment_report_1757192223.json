@@ -1,0 +1,66 @@
+{
+  "experiment_info": {
+    "start_time": "2025-09-06T15:57:03.905842",
+    "end_time": "2025-09-06T16:01:29.763992",
+    "total_duration_seconds": 265.85815024375916
+  },
+  "results": [
+    {
+      "failure_type": "crash",
+      "instance_id": "1",
+      "injection_time": 1757192294.123947,
+      "detection_time": 1757192303.329849,
+      "recovery_time": null,
+      "ttd_ms": 9205.902099609375,
+      "ttr_ms": null,
+      "load_test_result": {
+        "success_rate": 100.0,
+        "p95_ms": 114,
+        "p99_ms": 155
+      },
+      "parameters": {}
+    },
+    {
+      "failure_type": "latency",
+      "instance_id": "2",
+      "injection_time": 1757192343.509202,
+      "detection_time": 1757192357.4715571,
+      "recovery_time": 1757192378.677102,
+      "ttd_ms": 13962.355136871338,
+      "ttr_ms": 35167.90008544922,
+      "load_test_result": {
+        "success_rate": 100.0,
+        "p95_ms": 152,
+        "p99_ms": 197
+      },
+      "parameters": {
+        "latency_ms": 1200
+      }
+    },
+    {
+      "failure_type": "intermittent",
+      "instance_id": "3",
+      "injection_time": 1757192418.908111,
+      "detection_time": null,
+      "recovery_time": 1757192449.3819652,
+      "ttd_ms": null,
+      "ttr_ms": 30473.854064941406,
+      "load_test_result": {
+        "success_rate": 100.0,
+        "p95_ms": 135,
+        "p99_ms": 165
+      },
+      "parameters": {
+        "probability": 0.3
+      }
+    }
+  ],
+  "summary": {
+    "total_tests": 3,
+    "successful_tests": 3,
+    "avg_ttd_ms": 11584.128618240356,
+    "avg_ttr_ms": 32820.87707519531,
+    "max_p95_ms": 152,
+    "min_success_rate": 100
+  }
+}
