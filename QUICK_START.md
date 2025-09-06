@@ -86,6 +86,10 @@ python scripts/inject_failures.py clear --instance 1
 
 ## 📊 Monitoreo
 
+### Dashboard Web (Recomendado)
+- **Dashboard completo**: http://localhost:5007
+
+### APIs de Monitoreo
 - **Estado de servicios**: http://localhost:5004/status
 - **Métricas**: http://localhost:5004/metrics
 - **Fallas**: http://localhost:5004/failures

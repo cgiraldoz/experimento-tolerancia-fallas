@@ -12,6 +12,7 @@ El sistema está compuesto por los siguientes servicios:
 - **inventory-svc** (3 réplicas): Consume de Kafka, procesa reservas/liberaciones, expone health checks.
 - **monitor-svc**: Realiza health checks periódicos e inspecciona cola de errores. Marca instancias como OFF cuando detecta fallas.
 - **voter-svc**: Para consultas de inventario, agrega respuestas de las 3 réplicas y decide por mayoría.
+- **dashboard**: Dashboard web para visualizar métricas, fallas y estado del sistema en tiempo real.
 
 ### Infraestructura
 
@@ -46,6 +47,7 @@ curl http://localhost:5002/health  # inventory-svc-2
 curl http://localhost:5003/health  # inventory-svc-3
 curl http://localhost:5004/health  # monitor-svc
 curl http://localhost:5005/health  # voter-svc
+curl http://localhost:5007/health  # dashboard
 ```
 
 ### 3. Verificar estado del sistema
@@ -149,6 +151,19 @@ cd jmeter
 ```
 
 ## Monitoreo y Métricas
+
+### Dashboard Web
+
+**Acceso al Dashboard**: http://localhost:5007
+
+El dashboard proporciona visualización en tiempo real de:
+- **Resumen del Sistema**: Estado general, servicios saludables, instancias activas
+- **Estado de Servicios**: Health checks en tiempo real de todos los servicios
+- **Estado de Instancias**: Monitoreo de las 3 réplicas de inventory-svc
+- **Gráficos de Latencia**: Serie temporal de latencias por servicio (P95, P99)
+- **Gráficos de Requests**: Requests por minuto por servicio
+- **Fallas Detectadas**: Historial y gráficos de fallas por hora
+- **Métricas Detalladas**: Tabla con métricas completas por endpoint
 
 ### Endpoints de Monitoreo
 

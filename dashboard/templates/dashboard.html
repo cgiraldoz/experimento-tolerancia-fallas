@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Experimento Tolerancia a Fallas</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .metric-card.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .metric-card.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .metric-card.danger {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        }
+        .metric-card.info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-up { background-color: #28a745; }
+        .status-down { background-color: #dc3545; }
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .service-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #28a745;
+        }
+        .service-card.down {
+            border-left-color: #dc3545;
+        }
+        .failure-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #dc3545;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .auto-refresh {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <i class="fas fa-chart-line"></i> Dashboard - Experimento Tolerancia a Fallas
+            </span>
+            <div class="auto-refresh">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                    <label class="form-check-label text-white" for="autoRefresh">
+                        Auto-refresh
+                    </label>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Resumen General -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-tachometer-alt"></i> Resumen del Sistema</h2>
+            </div>
+        </div>
+
+        <div class="row" id="summaryCards">
+            <!-- Las tarjetas de resumen se cargarán aquí -->
+        </div>
+
+        <!-- Servicios y Estado -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h4><i class="fas fa-server"></i> Estado de Servicios</h4>
+                    <div id="servicesStatus">
+                        <!-- El estado de servicios se cargará aquí -->
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h4><i class="fas fa-database"></i> Estado de Instancias</h4>
+                    <div id="instancesStatus">
+                        <!-- El estado de instancias se cargará aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos de Métricas -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h4><i class="fas fa-clock"></i> Latencia por Servicio</h4>
+                    <div id="latencyChart"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-bar"></i> Requests por Minuto</h4>
+                    <div id="requestsChart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fallas y Eventos -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Fallas Detectadas</h4>
+                    <div id="failuresChart"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h4><i class="fas fa-history"></i> Fallas Recientes</h4>
+                    <div id="recentFailures">
+                        <!-- Las fallas recientes se cargarán aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas Detalladas -->
+        <div class="row">
+            <div class="col-12">
+                <div class="chart-container">
+                    <h4><i class="fas fa-table"></i> Métricas Detalladas</h4>
+                    <div id="detailedMetrics">
+                        <!-- Las métricas detalladas se cargarán aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón de Refresh -->
+    <button class="btn btn-primary refresh-btn" onclick="refreshAll()">
+        <i class="fas fa-sync-alt"></i> Actualizar
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let autoRefreshInterval;
+        let isAutoRefresh = true;
+
+        // Inicializar dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshAll();
+            setupAutoRefresh();
+        });
+
+        // Configurar auto-refresh
+        function setupAutoRefresh() {
+            const autoRefreshCheckbox = document.getElementById('autoRefresh');
+            autoRefreshCheckbox.addEventListener('change', function() {
+                isAutoRefresh = this.checked;
+                if (isAutoRefresh) {
+                    startAutoRefresh();
+                } else {
+                    stopAutoRefresh();
+                }
+            });
+            startAutoRefresh();
+        }
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            if (isAutoRefresh) {
+                autoRefreshInterval = setInterval(refreshAll, 5000); // Refresh cada 5 segundos
+            }
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // Función principal de refresh
+        async function refreshAll() {
+            try {
+                await Promise.all([
+                    loadSummary(),
+                    loadServicesStatus(),
+                    loadInstancesStatus(),
+                    loadLatencyChart(),
+                    loadRequestsChart(),
+                    loadFailuresChart(),
+                    loadRecentFailures(),
+                    loadDetailedMetrics()
+                ]);
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+            }
+        }
+
+        // Cargar resumen general
+        async function loadSummary() {
+            try {
+                const response = await fetch('/api/summary');
+                const data = await response.json();
+                
+                const summaryCards = document.getElementById('summaryCards');
+                summaryCards.innerHTML = `
+                    <div class="col-md-3">
+                        <div class="metric-card success">
+                            <h5><i class="fas fa-server"></i> Servicios</h5>
+                            <h2>${data.services.healthy}/${data.services.total}</h2>
+                            <p>${data.services.health_percentage.toFixed(1)}% Saludables</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card info">
+                            <h5><i class="fas fa-database"></i> Instancias</h5>
+                            <h2>${data.instances.active}/${data.instances.total}</h2>
+                            <p>${data.instances.availability_percentage.toFixed(1)}% Disponibles</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card ${data.failures.recent_1h > 0 ? 'warning' : 'success'}">
+                            <h5><i class="fas fa-exclamation-triangle"></i> Fallas</h5>
+                            <h2>${data.failures.recent_1h}</h2>
+                            <p>Última hora (${data.failures.total_24h} en 24h)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card ${data.performance.avg_latency_ms > 1000 ? 'warning' : 'success'}">
+                            <h5><i class="fas fa-clock"></i> Latencia</h5>
+                            <h2>${data.performance.avg_latency_ms}ms</h2>
+                            <p>P95: ${data.performance.max_p95_latency_ms}ms</p>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading summary:', error);
+            }
+        }
+
+        // Cargar estado de servicios
+        async function loadServicesStatus() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                const servicesStatus = document.getElementById('servicesStatus');
+                let html = '';
+                
+                for (const [serviceName, status] of Object.entries(data)) {
+                    const statusClass = status.status === 'UP' ? '' : 'down';
+                    const statusIcon = status.status === 'UP' ? 'fa-check-circle' : 'fa-times-circle';
+                    const statusColor = status.status === 'UP' ? 'text-success' : 'text-danger';
+                    
+                    html += `
+                        <div class="service-card ${statusClass}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${serviceName}</h6>
+                                    <small class="text-muted">Response: ${status.response_time.toFixed(1)}ms</small>
+                                </div>
+                                <div class="${statusColor}">
+                                    <i class="fas ${statusIcon}"></i>
+                                    <span class="status-indicator status-${status.status.toLowerCase()}"></span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                servicesStatus.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading services status:', error);
+            }
+        }
+
+        // Cargar estado de instancias
+        async function loadInstancesStatus() {
+            try {
+                const response = await fetch('/api/instances');
+                const data = await response.json();
+                
+                const instancesStatus = document.getElementById('instancesStatus');
+                let html = '';
+                
+                data.forEach(instance => {
+                    const statusClass = instance.status === 'ON' ? '' : 'down';
+                    const statusIcon = instance.status === 'ON' ? 'fa-check-circle' : 'fa-times-circle';
+                    const statusColor = instance.status === 'ON' ? 'text-success' : 'text-danger';
+                    
+                    html += `
+                        <div class="service-card ${statusClass}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${instance.service_name}-${instance.instance_id}</h6>
+                                    <small class="text-muted">Último check: ${new Date(instance.last_health_check).toLocaleTimeString()}</small>
+                                </div>
+                                <div class="${statusColor}">
+                                    <i class="fas ${statusIcon}"></i>
+                                    <span class="status-indicator status-${instance.status.toLowerCase()}"></span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                instancesStatus.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading instances status:', error);
+            }
+        }
+
+        // Cargar gráfico de latencias
+        async function loadLatencyChart() {
+            try {
+                const response = await fetch('/api/charts/latency');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('latencyChart').innerHTML = '<p class="text-muted">No hay datos disponibles</p>';
+                    return;
+                }
+                
+                const chartData = JSON.parse(data);
+                Plotly.newPlot('latencyChart', chartData.data, chartData.layout, {responsive: true});
+            } catch (error) {
+                console.error('Error loading latency chart:', error);
+                document.getElementById('latencyChart').innerHTML = '<p class="text-danger">Error cargando gráfico</p>';
+            }
+        }
+
+        // Cargar gráfico de requests
+        async function loadRequestsChart() {
+            try {
+                const response = await fetch('/api/charts/requests');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('requestsChart').innerHTML = '<p class="text-muted">No hay datos disponibles</p>';
+                    return;
+                }
+                
+                const chartData = JSON.parse(data);
+                Plotly.newPlot('requestsChart', chartData.data, chartData.layout, {responsive: true});
+            } catch (error) {
+                console.error('Error loading requests chart:', error);
+                document.getElementById('requestsChart').innerHTML = '<p class="text-danger">Error cargando gráfico</p>';
+            }
+        }
+
+        // Cargar gráfico de fallas
+        async function loadFailuresChart() {
+            try {
+                const response = await fetch('/api/charts/failures');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('failuresChart').innerHTML = '<p class="text-muted">No hay datos disponibles</p>';
+                    return;
+                }
+                
+                const chartData = JSON.parse(data);
+                Plotly.newPlot('failuresChart', chartData.data, chartData.layout, {responsive: true});
+            } catch (error) {
+                console.error('Error loading failures chart:', error);
+                document.getElementById('failuresChart').innerHTML = '<p class="text-danger">Error cargando gráfico</p>';
+            }
+        }
+
+        // Cargar fallas recientes
+        async function loadRecentFailures() {
+            try {
+                const response = await fetch('/api/failures?hours=1');
+                const data = await response.json();
+                
+                const recentFailures = document.getElementById('recentFailures');
+                let html = '';
+                
+                if (data.length === 0) {
+                    html = '<p class="text-success"><i class="fas fa-check"></i> No hay fallas recientes</p>';
+                } else {
+                    data.slice(0, 10).forEach(failure => {
+                        html += `
+                            <div class="failure-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>${failure.service_name}-${failure.instance_id}</strong>
+                                        <br>
+                                        <small class="text-muted">${failure.failure_type}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted">${new Date(failure.detected_at).toLocaleTimeString()}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                recentFailures.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading recent failures:', error);
+            }
+        }
+
+        // Cargar métricas detalladas
+        async function loadDetailedMetrics() {
+            try {
+                const response = await fetch('/api/metrics');
+                const data = await response.json();
+                
+                const detailedMetrics = document.getElementById('detailedMetrics');
+                let html = '';
+                
+                if (data.length === 0) {
+                    html = '<p class="text-muted">No hay métricas disponibles</p>';
+                } else {
+                    html = `
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Servicio</th>
+                                        <th>Endpoint</th>
+                                        <th>Requests</th>
+                                        <th>Avg Latency</th>
+                                        <th>P95 Latency</th>
+                                        <th>P99 Latency</th>
+                                        <th>Max Latency</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    data.forEach(metric => {
+                        html += `
+                            <tr>
+                                <td>${metric.service_name}</td>
+                                <td>${metric.method} ${metric.endpoint}</td>
+                                <td>${metric.request_count}</td>
+                                <td>${metric.avg_latency ? metric.avg_latency.toFixed(1) : 'N/A'}ms</td>
+                                <td>${metric.p95_latency ? metric.p95_latency.toFixed(1) : 'N/A'}ms</td>
+                                <td>${metric.p99_latency ? metric.p99_latency.toFixed(1) : 'N/A'}ms</td>
+                                <td>${metric.max_latency ? metric.max_latency.toFixed(1) : 'N/A'}ms</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                
+                detailedMetrics.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading detailed metrics:', error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -69,6 +69,7 @@ check_services_health() {
         "http://localhost:5003/health:inventory-svc-3"
         "http://localhost:5004/health:monitor-svc"
         "http://localhost:5005/health:voter-svc"
+        "http://localhost:5007/health:dashboard"
     )
     
     all_healthy=true

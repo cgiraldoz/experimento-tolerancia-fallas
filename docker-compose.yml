@@ -124,5 +124,16 @@ services:
       - kafka
       - postgres
 
+  dashboard:
+    build: ./dashboard
+    container_name: dashboard
+    ports:
+      - "5007:5007"
+    environment:
+      - POSTGRES_URL=postgresql://postgres:postgres@postgres:5432/experimento
+      - SERVICE_NAME=dashboard
+    depends_on:
+      - postgres
+
 volumes:
   postgres_data:
