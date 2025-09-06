@@ -63,7 +63,7 @@ check_services_health() {
     echo "🔍 Verificando health de servicios..."
     
     services=(
-        "http://localhost:5000/health:orders-svc"
+        "http://localhost:5006/health:orders-svc"
         "http://localhost:5001/health:inventory-svc-1"
         "http://localhost:5002/health:inventory-svc-2"
         "http://localhost:5003/health:inventory-svc-3"
@@ -121,7 +121,7 @@ run_basic_tests() {
     
     # Crear una orden
     echo "📝 Creando orden de prueba..."
-    order_response=$(curl -s -X POST http://localhost:5000/orders \
+    order_response=$(curl -s -X POST http://localhost:5006/orders \
         -H "Content-Type: application/json" \
         -d '{"product_id": "PROD-001", "quantity": 1}')
     

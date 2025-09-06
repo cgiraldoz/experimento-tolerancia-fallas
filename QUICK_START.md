@@ -53,7 +53,7 @@ python scripts/load_test.py query_inventory --rps 50 --duration 60
 
 ### Crear una Orden
 ```bash
-curl -X POST http://localhost:5000/orders \
+curl -X POST http://localhost:5006/orders \
   -H "Content-Type: application/json" \
   -d '{"product_id": "PROD-001", "quantity": 5}'
 ```

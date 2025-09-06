@@ -40,7 +40,7 @@ docker-compose up --build -d
 
 ```bash
 # Verificar health checks
-curl http://localhost:5000/health  # orders-svc
+curl http://localhost:5006/health  # orders-svc
 curl http://localhost:5001/health  # inventory-svc-1
 curl http://localhost:5002/health  # inventory-svc-2
 curl http://localhost:5003/health  # inventory-svc-3
@@ -63,7 +63,7 @@ curl http://localhost:5004/metrics
 ### Crear una Orden
 
 ```bash
-curl -X POST http://localhost:5000/orders \
+curl -X POST http://localhost:5006/orders \
   -H "Content-Type: application/json" \
   -d '{"product_id": "PROD-001", "quantity": 5}'
 ```
@@ -81,7 +81,7 @@ curl http://localhost:5005/inventory
 ### Cancelar una Orden
 
 ```bash
-curl -X POST http://localhost:5000/orders/{order_id}/cancel
+curl -X POST http://localhost:5006/orders/{order_id}/cancel
 ```
 
 ## Experimentos y Pruebas

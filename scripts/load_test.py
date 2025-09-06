@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # URLs de los servicios
-ORDERS_URL = 'http://localhost:5000'
+ORDERS_URL = 'http://localhost:5006'
 VOTER_URL = 'http://localhost:5005'
 MONITOR_URL = 'http://localhost:5004'
 

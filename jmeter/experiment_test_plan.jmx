@@ -10,7 +10,7 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="ORDERS_URL" elementType="Argument">
             <stringProp name="Argument.name">ORDERS_URL</stringProp>
-            <stringProp name="Argument.value">http://localhost:5000</stringProp>
+            <stringProp name="Argument.value">http://localhost:5006</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="VOTER_URL" elementType="Argument">
@@ -49,7 +49,7 @@
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
           <stringProp name="HTTPSampler.domain">localhost</stringProp>
-          <stringProp name="HTTPSampler.port">5000</stringProp>
+          <stringProp name="HTTPSampler.port">5006</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
           <stringProp name="HTTPSampler.path">/orders</stringProp>
