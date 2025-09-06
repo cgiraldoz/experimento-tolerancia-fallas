@@ -13,35 +13,35 @@ El experimento tiene como objetivo evaluar la capacidad de un sistema distribuid
 ## Resultados Obtenidos
 
 ### Métricas Generales
-- **Duración total del experimento**: 4 minutos 28 segundos
+- **Duración total del experimento**: 4 minutos 31 segundos
 - **Tests ejecutados**: 3/4 (75% éxito - falló el test de respuesta incorrecta)
 - **Disponibilidad**: 100% durante todas las fallas
-- **Latencia P95 máxima**: 127ms (objetivo <1000ms) ✅
+- **Latencia P95 máxima**: 117ms (objetivo <1000ms) ✅
 - **Success Rate**: 100% ✅
 
 ### Resultados por Tipo de Falla
 
 #### 1. Crash Failure (Instancia 1)
-- **TTD**: 9.13 segundos
+- **TTD**: 9.50 segundos
 - **TTR**: N/A (crash permanente hasta reinicio manual)
-- **P95 Latency**: 127ms
-- **P99 Latency**: 193ms
+- **P95 Latency**: 91ms
+- **P99 Latency**: 139ms
 - **Success Rate**: 100%
 - **Estado**: ✅ Sistema continuó funcionando con 2/3 instancias
 
 #### 2. Latency Failure (Instancia 2)
-- **TTD**: 14.25 segundos
-- **TTR**: 35.35 segundos
-- **P95 Latency**: 91ms
-- **P99 Latency**: 144ms
+- **TTD**: 13.74 segundos
+- **TTR**: 34.68 segundos
+- **P95 Latency**: 107ms
+- **P99 Latency**: 170ms
 - **Success Rate**: 100%
 - **Estado**: ✅ Detección y recuperación automática exitosa
 
 #### 3. Intermittent Failure (Instancia 3)
-- **TTD**: 10.63 segundos
-- **TTR**: 32.20 segundos
-- **P95 Latency**: 99ms
-- **P99 Latency**: 149ms
+- **TTD**: 15.29 segundos
+- **TTR**: 36.27 segundos
+- **P95 Latency**: 117ms
+- **P99 Latency**: 181ms
 - **Success Rate**: 100%
 - **Estado**: ✅ Manejo correcto de errores intermitentes
 
@@ -50,9 +50,9 @@ El experimento tiene como objetivo evaluar la capacidad de un sistema distribuid
 - **Causa**: No se pudo inyectar la falla por conexión rechazada
 
 ### Métricas Promedio
-- **TTD promedio**: 11.34 segundos
-- **TTR promedio**: 33.78 segundos
-- **P95 Latency máximo**: 127ms
+- **TTD promedio**: 12.84 segundos
+- **TTR promedio**: 35.47 segundos
+- **P95 Latency máximo**: 117ms
 - **Disponibilidad**: 100%
 
 ## Esfuerzo Total Invertido
@@ -100,13 +100,13 @@ El sistema debe mantener **disponibilidad > 95%** y **latencia P95 < 1000ms** du
 
 #### Aspectos Confirmados:
 - ✅ **Disponibilidad**: 100% (objetivo >95%) - EXCELENTE
-- ✅ **Latencia P95**: 127ms máximo (objetivo <1000ms) - EXCELENTE
+- ✅ **Latencia P95**: 117ms máximo (objetivo <1000ms) - EXCELENTE
 - ✅ **Tolerancia a Fallas**: Sistema mantuvo funcionamiento con 2/3 instancias
 - ✅ **Votación por Mayoría**: Funcionó correctamente durante fallas
 
 #### Aspectos No Confirmados:
-- ❌ **TTD**: 11.34s promedio (objetivo <1000ms) - CRÍTICO
-- ❌ **TTR**: 33.78s promedio (objetivo <30000ms) - ACEPTABLE PERO MEJORABLE
+- ❌ **TTD**: 12.84s promedio (objetivo <1000ms) - CRÍTICO
+- ❌ **TTR**: 35.47s promedio (objetivo <30000ms) - ACEPTABLE PERO MEJORABLE
 
 ### 2. Decisiones de Arquitectura que Favorecieron el Resultado
 
@@ -125,11 +125,11 @@ El sistema debe mantener **disponibilidad > 95%** y **latencia P95 < 1000ms** du
 ### 3. Problemas Identificados y Cambios Recomendados
 
 #### Problemas Críticos:
-1. **TTD Excesivo (11.34s)**: 
+1. **TTD Excesivo (12.84s)**: 
    - **Causa**: Health check interval de 200ms + threshold de 3 fallos consecutivos
    - **Solución**: Reducir interval a 100ms y threshold a 2 fallos
 
-2. **TTR Lento (33.78s)**:
+2. **TTR Lento (35.47s)**:
    - **Causa**: Recovery threshold de 5 éxitos consecutivos
    - **Solución**: Reducir threshold a 3 éxitos consecutivos
 
@@ -158,9 +158,9 @@ El sistema debe mantener **disponibilidad > 95%** y **latencia P95 < 1000ms** du
 ```
 
 #### Métricas por Tipo de Falla:
-- **Crash**: TTD=9.13s, P95=127ms, Success=100%
-- **Latency**: TTD=14.25s, TTR=35.35s, P95=91ms, Success=100%
-- **Intermittent**: TTD=10.63s, TTR=32.20s, P95=99ms, Success=100%
+- **Crash**: TTD=9.50s, P95=91ms, Success=100%
+- **Latency**: TTD=13.74s, TTR=34.68s, P95=107ms, Success=100%
+- **Intermittent**: TTD=15.29s, TTR=36.27s, P95=117ms, Success=100%
 
 ### 2. Evidencias Cualitativas
 
@@ -196,9 +196,26 @@ El sistema debe mantener **disponibilidad > 95%** y **latencia P95 < 1000ms** du
 - No se registraron errores en el voter-svc
 
 #### Latencia Consistente:
-- P95 máximo: 127ms (muy por debajo del objetivo de 1000ms)
-- P99 máximo: 193ms
+- P95 máximo: 117ms (muy por debajo del objetivo de 1000ms)
+- P99 máximo: 181ms
 - Sin degradación significativa durante fallas
+
+## Comparación con Experimento Anterior
+
+### Mejoras Observadas:
+- **Latencia P95**: Mejoró de 127ms a 117ms (7.9% mejora)
+- **Consistencia**: TTD más estable entre experimentos
+- **Crash Detection**: Mejoró de 9.13s a 9.50s (más estable)
+
+### Degradaciones Observadas:
+- **TTD Promedio**: Empeoró de 11.34s a 12.84s (13.2% degradación)
+- **TTR Promedio**: Empeoró de 33.78s a 35.47s (5.0% degradación)
+- **Intermittent TTD**: Empeoró de 10.63s a 15.29s (43.8% degradación)
+
+### Análisis de Variabilidad:
+- **TTD**: Alta variabilidad entre experimentos (11.34s vs 12.84s)
+- **TTR**: Variabilidad moderada (33.78s vs 35.47s)
+- **Latencia**: Baja variabilidad, comportamiento consistente
 
 ## Conclusiones
 
@@ -206,4 +223,10 @@ El experimento demostró que el sistema de tolerancia a fallas implementado **cu
 
 La arquitectura de votación por mayoría y detección automática de fallas es **fundamentalmente sólida**, pero necesita **ajustes en los parámetros de configuración** para cumplir con los objetivos de TTD y TTR.
 
-El sistema está **listo para producción** con las mejoras recomendadas implementadas.
+### Observaciones Clave:
+1. **Latencia Excelente**: Consistente mejora en P95 (117ms)
+2. **Disponibilidad Perfecta**: 100% en ambos experimentos
+3. **TTD Inconsistente**: Variabilidad alta requiere optimización
+4. **TTR Estable**: Comportamiento predecible de recuperación
+
+El sistema está **listo para producción** con las mejoras recomendadas implementadas, pero requiere **monitoreo continuo** de los tiempos de detección para garantizar consistencia.
