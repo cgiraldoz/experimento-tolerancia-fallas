@@ -618,9 +618,9 @@ def analyze_experiment_report(report_data):
             
             elif failure_type == 'intermittent':
                 if not ttd:
-                    analysis['key_findings'].append("ℹ️ Errores intermitentes: Detección por timeout (comportamiento esperado)")
+                    analysis['key_findings']
                 else:
-                    analysis['key_findings'].append(f"✅ Errores intermitentes detectados: {ttd:.0f}ms")
+                    analysis['key_findings']
         
         # Recomendaciones
         if avg_ttd > 5000:
